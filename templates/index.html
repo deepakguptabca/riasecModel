@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>AI RIASEC Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      max-width: 700px;
+      margin: auto;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    #loading {
+      font-size: 18px;
+      color: #444;
+      margin-top: 20px;
+    }
+    #progress {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>AI-Driven RIASEC Personality Test</h1>
+
+  <button id="startBtn" onclick="startTest()">Start Test</button>
+
+  <div id="loading"></div>
+
+  <div id="progress"></div>
+  <h2 id="question"></h2>
+  <div id="options"></div>
+
+<script>
+let currentRiasec = null;
+
+/* ---------------- START TEST ---------------- */
+async function startTest() {
+  document.getElementById("startBtn").style.display = "none";
+  document.getElementById("loading").innerText =
+    "⏳ AI is generating 12 intelligent questions, please wait...";
+
+  await fetch("/start");
+
+  pollForQuestions();
+}
+
+/* ---------------- WAIT UNTIL QUESTIONS READY ---------------- */
+async function pollForQuestions() {
+  const res = await fetch("/question");
+  const data = await res.json();
+
+  if (data.loading) {
+    // Gemini abhi kaam kar raha hai
+    setTimeout(pollForQuestions, 1000);
+    return;
+  }
+
+  document.getElementById("loading").innerText = "";
+  showQuestion(data);
+}
+
+/* ---------------- LOAD QUESTION ---------------- */
+async function loadQuestion() {
+  const res = await fetch("/question");
+  const data = await res.json();
+
+  if (data.done) {
+    showResult();
+    return;
+  }
+
+  showQuestion(data);
+}
+
+/* ---------------- SHOW QUESTION ---------------- */
+function showQuestion(data) {
+  currentRiasec = data.riasec;
+
+  document.getElementById("progress").innerText =
+    `Question ${data.step} of ${data.total}`;
+
+  document.getElementById("question").innerText = data.question;
+
+  const optionsDiv = document.getElementById("options");
+  optionsDiv.innerHTML = "";
+
+  data.options.forEach((opt, index) => {
+    const btn = document.createElement("button");
+    btn.innerText = opt;
+    btn.onclick = () => submitAnswer(index);
+    optionsDiv.appendChild(btn);
+  });
+}
+
+/* ---------------- SUBMIT ANSWER ---------------- */
+async function submitAnswer(index) {
+  await fetch("/answer", {
+    method: "POST",
+    headers: {"Content-Type": "application/json"},
+    body: JSON.stringify({
+      riasec: currentRiasec,
+      option: index
+    })
+  });
+
+  loadQuestion();
+}
+
+/* ---------------- SHOW RESULT ---------------- */
+async function showResult() {
+  const res = await fetch("/result");
+  const data = await res.json();
+
+  document.body.innerHTML = `
+    <h1>Your Personality Code: ${data.code}</h1>
+    <h3>RIASEC Score Breakdown</h3>
+    <pre>${JSON.stringify(data.scores, null, 2)}</pre>
+    <p>
+      This result is generated using an AI-driven,
+      gamified RIASEC assessment.
+    </p>
+  `;
+}
+</script>
+
+</body>
+</html>
