@@ -1,2 +1,4 @@
 # INSTALL DEPENDENCIES THROUGH PIP INSTALL REQUIREMENTS.TXT OR USING UVICORN
-# USE uvicorn app:app --reload TO run the app
+# USE 
+```bash
+uvicorn app:app --reload 
