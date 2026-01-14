@@ -11,6 +11,10 @@ import google.generativeai as genai
 # ---------------- ENV ----------------
 load_dotenv()
 
+# ---------------- FORM DATA STORAGE ----------------
+submitted_forms = []
+
+
 API_KEY = os.getenv("GEMINI_API_KEY")
 if not API_KEY:
     raise ValueError("❌ GEMINI_API_KEY missing in .env file")
@@ -40,6 +44,23 @@ questions = []
 questions_ready = False
 
 state = {"current": 0, "scores": {"R": 0, "I": 0, "A": 0, "S": 0, "E": 0, "C": 0}}
+
+# ---------------- FORM SUBMISSION ----------------
+
+@app.post("/formData")
+async def submit_form(data: dict):
+    # Store data
+    submitted_forms.append(data)
+
+    # Print in console
+    print("📥 New Form Data Received:")
+    print(json.dumps(data, indent=2))
+
+    return {
+        "success": True,
+        "message": "Form data stored successfully",
+        "total_submissions": len(submitted_forms)
+    }
 
 
 # ---------------- GEMINI ----------------
